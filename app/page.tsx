@@ -181,8 +181,7 @@ export default function Home() {
 
         <p className="mx-auto mt-5 max-w-md text-[15px] leading-relaxed text-rose-900/70">
           I sent you a message on Instagram. Then another one. Then, instead of
-          double-texting a third time, I built an entire website. So&hellip;
-          here we are.
+          double-texting I built an entire website. So&hellip; here we are.
         </p>
 
         <div className="mx-auto mt-6 w-full max-w-sm space-y-2 text-left">
