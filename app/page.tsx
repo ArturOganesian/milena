@@ -8,6 +8,7 @@ import {
   type CSSProperties,
 } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 
 const INSTAGRAM_CHAT_URL = "https://ig.me/m/arturoganesianofficial";
 
@@ -229,6 +230,13 @@ export default function Home() {
           P.S. You can always just reply to my message. But this felt more
           romantic.
         </p>
+
+        <Link
+          href="/universe"
+          className="mt-4 inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-rose-400 underline-offset-4 transition-colors hover:text-rose-500 hover:underline"
+        >
+          enter your little universe →
+        </Link>
       </section>
 
       {pos !== null && createPortal(noButton, document.body)}
