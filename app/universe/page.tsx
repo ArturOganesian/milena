@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { sendGTMEvent } from "@next/third-parties/google";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const INSTAGRAM_CHAT_URL = "https://ig.me/m/arturoganesianofficial";
@@ -475,7 +474,10 @@ export default function UniversePage() {
   useEffect(() => {
     if (finale && !finaleTracked.current) {
       finaleTracked.current = true;
-      sendGTMEvent({ event: "universe_finale" });
+      const w = window as unknown as { dataLayer?: unknown[] };
+      w.dataLayer = w.dataLayer || [];
+      // eslint-disable-next-line prefer-rest-params
+      (function gtag(..._args: unknown[]) { w.dataLayer!.push(arguments); })("event", "universe_finale");
     }
   }, [finale]);
 
