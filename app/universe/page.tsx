@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { sendGTMEvent } from "@next/third-parties/google";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const INSTAGRAM_CHAT_URL = "https://ig.me/m/arturoganesianofficial";
@@ -468,6 +469,15 @@ export default function UniversePage() {
   const [skyOpen, setSkyOpen] = useState(false);
 
   const isComplete = found.length === MEMORIES.length;
+
+  const finaleTracked = useRef(false);
+
+  useEffect(() => {
+    if (finale && !finaleTracked.current) {
+      finaleTracked.current = true;
+      sendGTMEvent({ event: "universe_finale" });
+    }
+  }, [finale]);
 
   const openSky = useCallback(() => {
     setSkyOpen(true);
