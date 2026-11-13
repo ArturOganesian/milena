@@ -9,7 +9,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 
-const INSTAGRAM_URL = "https://www.instagram.com/arturoganesianofficial/";
+const INSTAGRAM_CHAT_URL = "https://ig.me/m/arturoganesianofficial";
 
 const DODGE_LINES = [
   "Take your time. I'll wait. The No button won't.",
@@ -199,7 +199,7 @@ export default function Home() {
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
           <a
             ref={yesRef}
-            href={INSTAGRAM_URL}
+            href={INSTAGRAM_CHAT_URL}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setCelebrating(true)}
@@ -241,15 +241,15 @@ export default function Home() {
               You just made my day.
             </h2>
             <p className="mt-4 text-[15px] leading-relaxed text-white/90">
-              Taking you to my Instagram&hellip; send me that message, Milena.
+              Taking you to our chat&hellip; send me that message, Milena.
             </p>
             <a
-              href={INSTAGRAM_URL}
+              href={INSTAGRAM_CHAT_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-7 inline-flex h-12 items-center justify-center rounded-full bg-white px-7 text-sm font-semibold text-rose-600 shadow-lg transition-transform hover:scale-[1.03]"
             >
-              Open Instagram
+              Open our chat
             </a>
             <button
               type="button"
