@@ -28,52 +28,52 @@ const HEART_PATH = `${HEART_POINTS.map(
 
 const MEMORIES = [
   {
-    title: "The first message",
-    note: "I don't remember exactly what I said. I remember that you replied, and the whole day got a little brighter.",
+    title: "The wedding",
+    note: "One ceremony, a hundred people, and somehow you were the only thing in the room I remember clearly.",
   },
   {
-    title: "Your name",
-    note: "Milena. I've caught myself saying it just to hear how it sounds. It's a nice name. It's a better excuse.",
+    title: "Your smile",
+    note: "The easy, unbothered kind of smile. It showed up before you even said anything, and it stayed in my head long after.",
+  },
+  {
+    title: "The way you move through a room",
+    note: "You talk to everyone like you've known them for years. That kind of warmth can't be faked.",
   },
   {
     title: "Your laugh",
-    note: "The one you do when you're trying not to laugh. That one wins every single time.",
+    note: "I heard it once across the tables and immediately forgot whatever sentence I was in the middle of.",
   },
   {
-    title: "The way you talk",
-    note: "You explain things like they matter, and somehow I end up caring about all of them.",
+    title: "The way you carry yourself",
+    note: "You didn't need to be the loudest person there to be the most noticeable one. You just had this calm, easy confidence.",
   },
   {
-    title: "Late replies",
-    note: "You take your time. I've decided to find that charming instead of stressful.",
+    title: "The courage I didn't have",
+    note: "I spent the whole evening planning a casual 'hi'. I left without saying a single word. Bold of me, I know.",
   },
   {
-    title: "Your taste",
-    note: "Whatever you're listening to, reading, watching, I'm quietly taking notes.",
+    title: "The first message",
+    note: "I sent it. Then checked my phone like it owed me money. It did not reply.",
   },
   {
-    title: "The little things",
-    note: "The pause before you answer. The way you type 'hmm'. The tiny details that shouldn't matter and completely do.",
+    title: "The silence",
+    note: "No reply. Not even a 'who is this?' I've decided that's mysterious, not devastating. Mostly.",
   },
   {
-    title: "Your kindness",
-    note: "You're gentle with people in a world that gives no reason to be. I notice.",
+    title: "Your name",
+    note: "Milena. I've typed it, deleted it, typed it again. It looks good in my notifications. It would look better.",
   },
   {
     title: "The maybe",
     note: "I like that nothing is decided yet. The maybe of you is already my favorite part of the week.",
   },
   {
-    title: "This moment",
-    note: "If you're reading this, you're in my little universe now. Thank you for wandering in.",
-  },
-  {
     title: "The truth",
-    note: "I built an entire sky just to avoid double-texting. That's not a joke. That's how much I like you.",
+    note: "I built an entire website instead of double-texting. That's either romantic or a cry for help. Possibly both.",
   },
   {
     title: "The question",
-    note: "There's one thing I've been trying to ask for a while. Finish the constellation and I'll finally say it properly.",
+    note: "Finish the constellation and I'll ask you the one thing that was too much for a text.",
   },
 ];
 
@@ -106,9 +106,11 @@ function Starfield() {
     let frame = 0;
     let width = 0;
     let height = 0;
+    let centerX = 0;
+    let centerY = 0;
     let last = performance.now();
     let elapsed = 0;
-    let nextShooting = 1600 + Math.random() * 2400;
+    let nextShooting = 2200 + Math.random() * 3200;
 
     const pointer = { x: 0, y: 0, tx: 0, ty: 0 };
 
@@ -121,7 +123,8 @@ function Starfield() {
       speed: number;
       phase: number;
       depth: number;
-      warm: boolean;
+      tint: string;
+      bright: boolean;
     };
 
     type Shooting = {
@@ -135,57 +138,239 @@ function Starfield() {
 
     let stars: SkyStar[] = [];
     let shooting: Shooting[] = [];
+    let nebulaField: HTMLCanvasElement | null = null;
+    let galaxyBand: HTMLCanvasElement | null = null;
+    let glowSprite: HTMLCanvasElement | null = null;
+
+    const gaussian = () => {
+      let u = 0;
+      let v = 0;
+      while (u === 0) u = Math.random();
+      while (v === 0) v = Math.random();
+      return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    };
+
+    const makeGlowSprite = () => {
+      const size = 64;
+      const sprite = document.createElement("canvas");
+      sprite.width = size;
+      sprite.height = size;
+      const spriteContext = sprite.getContext("2d");
+      if (!spriteContext) return sprite;
+      const gradient = spriteContext.createRadialGradient(
+        size / 2,
+        size / 2,
+        0,
+        size / 2,
+        size / 2,
+        size / 2,
+      );
+      gradient.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+      gradient.addColorStop(0.25, "rgba(255, 240, 250, 0.5)");
+      gradient.addColorStop(1, "rgba(255, 220, 240, 0)");
+      spriteContext.fillStyle = gradient;
+      spriteContext.fillRect(0, 0, size, size);
+      return sprite;
+    };
+
+    const makeNebulaField = () => {
+      const scale = 1.6;
+      const field = document.createElement("canvas");
+      field.width = Math.ceil(width * scale);
+      field.height = Math.ceil(height * scale);
+      const fieldContext = field.getContext("2d");
+      if (!fieldContext) return field;
+      fieldContext.globalCompositeOperation = "lighter";
+
+      const palette = [
+        [330, 90, 66, 0.16],
+        [290, 85, 62, 0.14],
+        [215, 90, 64, 0.13],
+        [265, 80, 60, 0.12],
+        [190, 85, 62, 0.1],
+        [345, 90, 62, 0.11],
+        [240, 90, 66, 0.09],
+      ];
+
+      for (let i = 0; i < 16; i += 1) {
+        const [hue, saturation, lightness, alpha] = palette[i % palette.length];
+        const radius =
+          Math.max(field.width, field.height) * (0.16 + Math.random() * 0.26);
+        const x = Math.random() * field.width;
+        const y = Math.random() * field.height;
+        const gradient = fieldContext.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(
+          0,
+          `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`,
+        );
+        gradient.addColorStop(
+          0.45,
+          `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha * 0.45})`,
+        );
+        gradient.addColorStop(1, "hsla(0, 0%, 0%, 0)");
+        fieldContext.fillStyle = gradient;
+        fieldContext.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+      }
+
+      return field;
+    };
+
+    const makeGalaxyBand = () => {
+      const band = document.createElement("canvas");
+      band.width = Math.ceil(width * 1.7);
+      band.height = Math.ceil(height * 1.7);
+      const bandContext = band.getContext("2d");
+      if (!bandContext) return band;
+      const mid = band.height / 2;
+
+      const haze = bandContext.createLinearGradient(0, 0, 0, band.height);
+      haze.addColorStop(0, "rgba(120, 100, 200, 0)");
+      haze.addColorStop(0.34, "rgba(160, 130, 230, 0.05)");
+      haze.addColorStop(0.48, "rgba(240, 220, 255, 0.12)");
+      haze.addColorStop(0.52, "rgba(255, 235, 245, 0.1)");
+      haze.addColorStop(0.66, "rgba(150, 140, 230, 0.05)");
+      haze.addColorStop(1, "rgba(110, 90, 190, 0)");
+      bandContext.fillStyle = haze;
+      bandContext.fillRect(0, 0, band.width, band.height);
+
+      const dustCount = Math.round((band.width * band.height) / 1000);
+      for (let i = 0; i < dustCount; i += 1) {
+        const x = Math.random() * band.width;
+        const y = mid + gaussian() * band.height * 0.13;
+        const radius = 0.3 + Math.random() * 1.1;
+        const alpha = 0.08 + Math.random() * 0.5;
+        const warm = Math.random() < 0.28;
+        bandContext.fillStyle = warm
+          ? `rgba(255, 232, 205, ${alpha})`
+          : `rgba(225, 225, 255, ${alpha})`;
+        bandContext.beginPath();
+        bandContext.arc(x, y, radius, 0, Math.PI * 2);
+        bandContext.fill();
+      }
+
+      for (let i = 0; i < 40; i += 1) {
+        const x = Math.random() * band.width;
+        const y = mid + gaussian() * band.height * 0.1;
+        const radius = 1.4 + Math.random() * 1.8;
+        bandContext.fillStyle = `rgba(255, 245, 250, ${
+          0.4 + Math.random() * 0.4
+        })`;
+        bandContext.beginPath();
+        bandContext.arc(x, y, radius, 0, Math.PI * 2);
+        bandContext.fill();
+      }
+
+      return band;
+    };
 
     const resize = () => {
       const rect = canvas.getBoundingClientRect();
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       width = Math.max(1, rect.width);
       height = Math.max(1, rect.height);
+      centerX = width / 2;
+      centerY = height / 2;
       canvas.width = Math.floor(width * dpr);
       canvas.height = Math.floor(height * dpr);
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      const target = Math.round((width * height) / 7000);
-      const count = Math.min(300, Math.max(80, target));
+      const target = Math.round((width * height) / 3200);
+      const count = Math.min(650, Math.max(140, target));
+      const padX = width * 0.18;
+      const padY = height * 0.18;
 
-      stars = Array.from({ length: count }, () => ({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        radius: 0.4 + Math.random() * 1.5,
-        alpha: 0.2 + Math.random() * 0.5,
-        pulse: 0.12 + Math.random() * 0.32,
-        speed: 0.6 + Math.random() * 1.6,
-        phase: Math.random() * Math.PI * 2,
-        depth: 0.25 + Math.random() * 0.75,
-        warm: Math.random() < 0.35,
-      }));
+      stars = Array.from({ length: count }, () => {
+        const roll = Math.random();
+        const tint =
+          roll < 0.2
+            ? "255, 214, 235"
+            : roll < 0.42
+              ? "206, 224, 255"
+              : roll < 0.5
+                ? "255, 236, 205"
+                : "240, 236, 255";
+        return {
+          x: -padX + Math.random() * (width + padX * 2),
+          y: -padY + Math.random() * (height + padY * 2),
+          radius: 0.35 + Math.random() * 1.45,
+          alpha: 0.18 + Math.random() * 0.55,
+          pulse: 0.1 + Math.random() * 0.35,
+          speed: 0.4 + Math.random() * 1.8,
+          phase: Math.random() * Math.PI * 2,
+          depth: 0.25 + Math.random() * 0.75,
+          tint,
+          bright: Math.random() < 0.08,
+        };
+      });
+
+      nebulaField = makeNebulaField();
+      galaxyBand = makeGalaxyBand();
+      if (!glowSprite) glowSprite = makeGlowSprite();
     };
 
     const render = (delta: number) => {
       elapsed += delta / 1000;
-      pointer.x += (pointer.tx - pointer.x) * 0.045;
-      pointer.y += (pointer.ty - pointer.y) * 0.045;
+      pointer.x += (pointer.tx - pointer.x) * 0.04;
+      pointer.y += (pointer.ty - pointer.y) * 0.04;
 
       context.clearRect(0, 0, width, height);
+
+      if (nebulaField) {
+        context.save();
+        context.globalCompositeOperation = "lighter";
+        context.globalAlpha = 0.85;
+        context.translate(centerX + pointer.x * 14, centerY + pointer.y * 14);
+        context.rotate(Math.sin(elapsed * 0.015) * 0.04 + elapsed * 0.0025);
+        context.drawImage(
+          nebulaField,
+          -nebulaField.width / 2,
+          -nebulaField.height / 2,
+        );
+        context.restore();
+      }
+
+      if (galaxyBand) {
+        context.save();
+        context.globalCompositeOperation = "lighter";
+        context.globalAlpha = 0.6;
+        context.translate(centerX + pointer.x * 24, centerY + pointer.y * 24);
+        context.rotate(-0.42 + Math.sin(elapsed * 0.02) * 0.012 + elapsed * 0.004);
+        context.drawImage(
+          galaxyBand,
+          -galaxyBand.width / 2,
+          -galaxyBand.height / 2,
+        );
+        context.restore();
+      }
+
+      context.save();
+      context.translate(centerX, centerY);
+      context.rotate(elapsed * 0.0045);
+      context.translate(-centerX, -centerY);
 
       for (const star of stars) {
         const twinkle =
           star.alpha + star.pulse * Math.sin(elapsed * star.speed + star.phase);
-        const offsetX = pointer.x * star.depth * 26;
-        const offsetY = pointer.y * star.depth * 26;
+        const alpha = Math.max(0.04, twinkle);
+        const x = star.x + pointer.x * star.depth * 26;
+        const y = star.y + pointer.y * star.depth * 26;
+
+        if (star.bright && glowSprite) {
+          const size = 10 + star.radius * 10;
+          context.globalCompositeOperation = "lighter";
+          context.globalAlpha = Math.min(0.8, alpha + 0.15);
+          context.drawImage(glowSprite, x - size / 2, y - size / 2, size, size);
+          context.globalAlpha = 1;
+          context.globalCompositeOperation = "source-over";
+        }
+
         context.beginPath();
-        context.arc(
-          star.x + offsetX,
-          star.y + offsetY,
-          star.radius,
-          0,
-          Math.PI * 2,
-        );
-        context.fillStyle = star.warm
-          ? `rgba(255, 236, 210, ${Math.max(0.05, twinkle)})`
-          : `rgba(244, 214, 255, ${Math.max(0.05, twinkle)})`;
+        context.arc(x, y, star.radius, 0, Math.PI * 2);
+        context.fillStyle = `rgba(${star.tint}, ${alpha})`;
         context.fill();
       }
+
+      context.restore();
 
       if (reduceMotion) return;
 
@@ -193,14 +378,14 @@ function Starfield() {
       if (nextShooting <= 0) {
         const fromLeft = Math.random() < 0.5;
         shooting.push({
-          x: fromLeft ? -40 : width + 40,
-          y: Math.random() * height * 0.5,
-          vx: (fromLeft ? 1 : -1) * (0.55 + Math.random() * 0.4),
-          vy: 0.35 + Math.random() * 0.2,
+          x: fromLeft ? -60 : width + 60,
+          y: Math.random() * height * 0.55,
+          vx: (fromLeft ? 1 : -1) * (0.6 + Math.random() * 0.5),
+          vy: 0.3 + Math.random() * 0.25,
           life: 0,
-          ttl: 900 + Math.random() * 500,
+          ttl: 1000 + Math.random() * 600,
         });
-        nextShooting = 2800 + Math.random() * 4200;
+        nextShooting = 2600 + Math.random() * 4800;
       }
 
       shooting = shooting.filter((shot) => {
@@ -210,8 +395,8 @@ function Starfield() {
         const progress = shot.life / shot.ttl;
         if (progress >= 1) return false;
         const fade = Math.sin(progress * Math.PI);
-        const tailX = shot.x - shot.vx * 160;
-        const tailY = shot.y - shot.vy * 160;
+        const tailX = shot.x - shot.vx * 220;
+        const tailY = shot.y - shot.vy * 220;
         const gradient = context.createLinearGradient(
           shot.x,
           shot.y,
@@ -221,7 +406,7 @@ function Starfield() {
         gradient.addColorStop(0, `rgba(255, 244, 230, ${0.9 * fade})`);
         gradient.addColorStop(1, "rgba(255, 244, 230, 0)");
         context.strokeStyle = gradient;
-        context.lineWidth = 1.4;
+        context.lineWidth = 1.6;
         context.beginPath();
         context.moveTo(shot.x, shot.y);
         context.lineTo(tailX, tailY);
@@ -278,8 +463,50 @@ export default function UniversePage() {
   const [found, setFound] = useState<number[]>([]);
   const [active, setActive] = useState<number | null>(null);
   const [finale, setFinale] = useState(false);
+  const [intro, setIntro] = useState(true);
+  const [introLeaving, setIntroLeaving] = useState(false);
+  const [skyOpen, setSkyOpen] = useState(false);
 
   const isComplete = found.length === MEMORIES.length;
+
+  const openSky = useCallback(() => {
+    setSkyOpen(true);
+    setIntroLeaving(true);
+    window.setTimeout(() => setIntro(false), 950);
+  }, []);
+
+  useEffect(() => {
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      const timer = window.setTimeout(openSky, 3900);
+      return () => window.clearTimeout(timer);
+    }
+
+    const timer = window.setTimeout(() => {
+      setSkyOpen(true);
+      setIntro(false);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [openSky]);
+
+  useEffect(() => {
+    if (!intro) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [intro]);
+
+  useEffect(() => {
+    if (!intro) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" || event.key === "Enter" || event.key === " ") {
+        openSky();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [intro, openSky]);
 
   const openMemory = (index: number) => {
     setActive(index);
@@ -331,9 +558,17 @@ export default function UniversePage() {
           Milena&apos;s little universe
         </h1>
         <p className="fade-up mt-4 max-w-md text-sm leading-relaxed text-rose-100/60">
-          Some things are too big for a text message. So I made you a sky — twelve
-          stars, one for every reason.
+          I saw you once, at my friend&apos;s wedding — and never worked up the
+          courage to say hi. So I noticed twelve things from across the room and
+          made you a sky.
         </p>
+        <span className="mt-5 rounded-full border border-rose-200/15 bg-white/[0.05] px-4 py-1.5 text-[11px] font-medium tracking-wide text-rose-100/85 backdrop-blur">
+          {found.length === 0
+            ? "Tap the stars — every one is a reason."
+            : isComplete
+              ? "Every star found. The sky is yours."
+              : `${found.length} of ${MEMORIES.length} reasons found`}
+        </span>
       </header>
 
       <div className="relative z-10 flex flex-1 items-center justify-center px-4 py-4 sm:py-6">
@@ -372,7 +607,9 @@ export default function UniversePage() {
               strokeLinejoin="round"
               pathLength={1}
               filter="url(#heart-glow)"
-              className="constellation-line transition-[stroke-width] duration-1000"
+              className={`${
+                skyOpen ? "constellation-line" : "opacity-0"
+              } transition-[stroke-width,opacity] duration-1000`}
             />
           </svg>
 
@@ -414,21 +651,103 @@ export default function UniversePage() {
         </div>
       </div>
 
-      <footer className="relative z-10 px-6 pb-8 text-center sm:pb-10">
-        <div className="mx-auto h-1 w-44 overflow-hidden rounded-full bg-white/10">
+      <footer className="relative z-10 flex justify-center px-6 pb-8 sm:pb-10">
+        <div className="h-1 w-44 overflow-hidden rounded-full bg-white/10">
           <div
             className="h-full rounded-full bg-gradient-to-r from-rose-400 via-fuchsia-400 to-amber-200 transition-all duration-700"
             style={{ width: `${(found.length / MEMORIES.length) * 100}%` }}
           />
         </div>
-        <p className="mt-3 text-[11px] tracking-wide text-rose-100/55">
-          {found.length === 0
-            ? "Tap the stars — every one is a reason."
-            : isComplete
-              ? "Every star found. The sky is yours."
-              : `${found.length} of ${MEMORIES.length} reasons found`}
-        </p>
       </footer>
+
+      {intro && (
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label="Open Milena's universe"
+          onClick={openSky}
+          className={`fixed inset-0 z-[60] flex cursor-pointer flex-col items-center justify-center overflow-hidden bg-[#08040f] px-6 ${
+            introLeaving ? "intro-leaving" : ""
+          }`}
+        >
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_45%,rgba(190,24,93,0.28),transparent_55%),radial-gradient(ellipse_at_50%_105%,rgba(76,29,149,0.4),transparent_60%)]"
+          />
+          <svg
+            viewBox="0 0 600 220"
+            aria-hidden="true"
+            className="relative w-[min(86vw,560px)] overflow-visible"
+          >
+            <defs>
+              <linearGradient id="intro-ink" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#fecdd3" />
+                <stop offset="55%" stopColor="#f9a8d4" />
+                <stop offset="100%" stopColor="#fde68a" />
+              </linearGradient>
+              <linearGradient id="intro-edge" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#ffffff" />
+                <stop offset="86%" stopColor="#ffffff" />
+                <stop offset="100%" stopColor="#000000" />
+              </linearGradient>
+              <filter
+                id="intro-glow"
+                x="-50%"
+                y="-50%"
+                width="200%"
+                height="200%"
+              >
+                <feGaussianBlur stdDeviation="5" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+              <mask
+                id="intro-reveal"
+                maskUnits="userSpaceOnUse"
+                x="0"
+                y="0"
+                width="600"
+                height="220"
+              >
+                <rect x="0" y="0" width="0" height="220" fill="url(#intro-edge)">
+                  <animate
+                    attributeName="width"
+                    from="0"
+                    to="600"
+                    dur="2.4s"
+                    begin="0.3s"
+                    fill="freeze"
+                    calcMode="spline"
+                    keyTimes="0;1"
+                    keySplines="0.33 0 0.67 1"
+                  />
+                </rect>
+              </mask>
+            </defs>
+            <text
+              x="300"
+              y="148"
+              textAnchor="middle"
+              fontFamily="var(--font-great-vibes), cursive"
+              fontSize="150"
+              fill="url(#intro-ink)"
+              filter="url(#intro-glow)"
+              mask="url(#intro-reveal)"
+            >
+              Milena
+            </text>
+          </svg>
+          <p className="intro-caption relative mt-1 text-[10px] font-semibold uppercase tracking-[0.45em] text-rose-200/70">
+            a little universe, just for you
+          </p>
+          <Heart className="intro-heart relative mt-6 h-4 w-4 text-rose-400/80" />
+          <span className="intro-hint absolute bottom-10 text-[10px] font-medium uppercase tracking-[0.3em] text-rose-100/50">
+            tap anywhere to open
+          </span>
+        </div>
+      )}
 
       {active !== null && (
         <div
@@ -499,8 +818,9 @@ export default function UniversePage() {
                 You just mapped my whole heart.
               </h2>
               <p className="mt-4 text-[15px] leading-relaxed text-rose-100/80">
-                Twelve reasons, one conclusion: I really like you, Milena. The only
-                thing left in this universe is your answer.
+                Twelve reasons, one wedding, zero replies — and one conclusion:
+                I really like you, Milena. No pressure. The universe is yours,
+                and the reply is optional.
               </p>
               <a
                 href={INSTAGRAM_CHAT_URL}
@@ -509,8 +829,7 @@ export default function UniversePage() {
                 className="yes-glow mt-8 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 px-7 text-sm font-semibold text-white transition-transform hover:scale-[1.03] active:scale-95"
               >
                 Give me your answer
-                <Heart className="h-4 w-4" />
-              </a>
+                <Heart className="h-4 w-4" />              </a>
               <button
                 type="button"
                 onClick={() => setFinale(false)}

@@ -186,13 +186,43 @@ body {
   will-change: opacity, transform;
 }
 
+.intro-caption {
+  animation: fade-up 1s cubic-bezier(0.22, 1, 0.36, 1) both 1.9s;
+}
+
+.intro-heart {
+  animation: pop-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both 2.75s;
+}
+
+@keyframes intro-hint {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.intro-hint {
+  animation: intro-hint 1.2s ease both 2.5s;
+}
+
+.intro-leaving {
+  opacity: 0;
+  transition: opacity 0.9s ease;
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .heart-float,
   .blob,
   .fade-up,
   .pop-in,
   .no-dodge,
-  .star-breathe {
+  .star-breathe,
+  .intro-caption,
+  .intro-heart,
+  .intro-hint {
     animation: none !important;
   }
 
